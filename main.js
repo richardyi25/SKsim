@@ -6,12 +6,21 @@
 //var state = makeAll(["C", [["B", "C"], ["C", "I"]], "x", "y", "z"]);
 //var state = makeAll(["C", "C", "C", "C", "C", "C", "C", "1", "2", "3"]);
 //var state = makeAll(["B",["B",["B",["B",["B","K"],["B",["B","K"]]],["B",["B","C"]]],["B","C"]],"C", "I", "a", "b", "c", "d", "e", "f"]);
-var state = makeAll(["B","K",["B",["B","K"],["B",["B","C"],["B","C",["C","I"]]]],"a","b","c","d","e","f"]);
+//var state = makeAll(["B","K",["B",["B","K"],["B",["B","C"],["B","C",["C","I"]]]],"a","b","c","d","e","f"]);
+//var state = makeComb("BK(B(BK)(B(BC)(BC(CI))))abcdef");
+//var state = makeComb("SS(SK)xy");
+//var state = makeComb("MM");
+//var state = makeComb("SS(SK)(SKS)(SS(SK)(SKS))");
+//var state = makeComb("CB(WI)xy");
+//var state = makeComb("WS(CB(WI))f"); // Z-combinator
+//var state = makeComb("WSKx");
+var str = "SKKx";
+var state = makeComb(str);
 // ["C", "B", ["W", "I"], "x", "y"]
-var offset, height;
+var offset, height, count = 0;
 
-const combWidth = 100, brWidth = 50, adjWidth = 70, barWidth = 70;
-const backHeight = 50, combHeight = 100, barHeight = 15;
+const combWidth = 200, brWidth = 80, adjWidth = 70, barWidth = 70;
+const backHeight = 50, combHeight = 200, barHeight = 30;
 
 function back(depth, width){
 	var c = $("canvas");
@@ -21,7 +30,7 @@ function back(depth, width){
 			y: i * backHeight,
 			width: width,
 			height: 2 * (height - i) * backHeight + combHeight,
-			fillStyle: "hsl(" + (-80 * Math.sqrt(i) + 180) + ", 80%, 80%)",
+			fillStyle: "hsl(" + (-45 * i + 180) + ", 80%, 80%)",
 			fromCenter: false
 		});
 	}
@@ -55,7 +64,7 @@ function draw(state, depth, curried, inline){
 				text: comb.id,
 				fromCenter: true
 			});
-			if(!curried && comb.num > -1 && i == 0 && depth == 0){
+			if(!curried && comb.num > -1 /*&& i == 0 && depth == 0*/){
 				c.drawText({
 					fillStyle: comb.num,
 					x: offset + combWidth * 0.9,
@@ -128,9 +137,9 @@ function draw(state, depth, curried, inline){
 }
 
 function render(){
-	var canvas = document.getElementById("canvas");
 	c = $("canvas");
 	
+	var canvas = document.getElementById("canvas");
 	canvas.width = window.innerWidth * 3;
 	canvas.height = window.innerHeight * 3;
 	canvas.style.height = window.innerHeight + "px";
@@ -145,28 +154,44 @@ function render(){
 
 	offset = 0;
 	draw(state, 0, false, false);
-
-	c.drawText({
-		fillStyle: "black",
-		x: 100, y: canvas.height - 100,
-		fontSize: 50,
-		fontFamily: "Verdana, Sans",
-		text: "Press Enter to step",
-		fromCenter: false
-	});
 }
 
 function go(e){
-	if(e.which != 13) return;
+	//if(e.which != 13) return;
 	var tmp = step(state), stepped = tmp[0], changed = tmp[1];
-	if(!changed) return;
-	state = stepped;
+	if(!changed || count >= MAX_STEPS) return;
+	++count;
+	state = etasub(stepped);
+	render();
+}
+
+function resize(){
+	var canvas = document.getElementById("canvas");
+	canvas.width = window.innerWidth * 3;
+	canvas.height = window.innerHeight * 3;
+	canvas.style.height = window.innerHeight + "px";
+	canvas.style.width = window.innerWidth + "px";
 	render();
 }
 
 $(document).ready(function(){
 	var tmp = maxHeight(state);
-	height = tmp == -1 ? 15 : tmp;
+	//height = tmp == -1 ? 15 : tmp;
+	height = tmp;
+	initEta();
+	resize();
 	render();
-	$(document).keydown(go);
+	//$(document).keydown(go);
+	window.setInterval(go, 200);
+
+	$(document).keydown(function(e){
+		if(e.which != 13) return;
+		str = prompt("", str);
+		state = makeComb(str);
+		height = maxHeight(state);
+		count = 0;
+		render();
+	});
 });
+
+window.onresize = resize;

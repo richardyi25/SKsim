@@ -1,3 +1,4 @@
+var MAX_STEPS = 200;
 print = console.log;
 
 function apply(f, args){
@@ -35,9 +36,11 @@ var lookup = {
 	"I": new Comb(1, [0], "white"),
 	"B": new Comb(3, [0, [1, 2]], "red"),
 	"C": new Comb(3, [0, 2, 1], "yellow"),
-	"D": new Comb(3, [1, 2, 0], "yellow"),
+	"D": new Comb(3, [1, 2, 0], "blue"),
 	"W": new Comb(2, [0, 1, 1], "darkgreen"),
-	"L": new Comb(2, [0, [1, 1]], "blue")
+	"L": new Comb(2, [0, [1, 1]], "blue"),
+	"M": new Comb(1, [0, 0], "brown"),
+	"T": new Comb(2, [1, 0], "blue")
 };
 
 var a1 = ["x", "y", "z"];
@@ -147,17 +150,66 @@ function getHeight(state){
 
 function maxHeight(s){
 	var state = Array.from(s), res = 0;
-	for(var i = 0; i < 100; i++){
+	for(var i = 0; i < MAX_STEPS; i++){
 		res = Math.max(res, getHeight(state));
 		var tmp = step(state), stepped = tmp[0], changed = tmp[1];
 		if(!changed) return res;
 		state = stepped;
 	}
-	return -1;
+	return res;
 }
 
-//function stringHelp(str, ptr, acc){
-//	if(str[ptr] == "(")
-//		return [stringHelp(str, ptr + 1)];
-//
-//}
+function stringHelp(str, ptr){
+	var res = [];
+	for(; ptr < str.length; ptr++){
+		if(str[ptr] == "("){
+			var tmp = stringHelp(str, ptr + 1), sub = tmp[0], newPtr = tmp[1];
+			res.push(sub);
+			ptr = newPtr;
+		}
+		else if(str[ptr] == ")")
+			return [res, ptr];
+		else
+			res.push(str[ptr]);
+	}
+	return [res, ptr];
+}
+
+function makeComb(str){
+	return makeAll(stringHelp(str, 0)[0]);
+}
+
+var eta = [
+];
+
+function combCmp(state, comb){
+	for(var i = 0; i < state.length; i++)
+		if(state[i].id != comb[i].id)
+			return false;
+	return true;
+}
+
+function etasub(s){
+	var state = Array.from(s);
+
+	for(var i = 0; i < state.length; i++)
+		if(Array.isArray(state[i]))
+			state[i] = etasub(state[i]);
+
+	for(var e = 0; e < eta.length; e++){
+		var key = eta[e][0], value = eta[e][1];
+		for(var i = 0; i < state.length - key.length + 1; i++){
+			if(combCmp(state.slice(i, i + key.length), key)){
+				state = state.slice(0, i).concat(value).concat(state.slice(i + key.length));
+			}
+		}
+	}
+	return state;
+}
+
+function initEta(){
+	for(var i = 0; i < eta.length; i++){
+		eta[i][0] = makeComb(eta[i][0]);
+		eta[i][1] = makeComb(eta[i][1]);
+	}
+}
